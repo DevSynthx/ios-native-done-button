@@ -2,18 +2,16 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'keyboard_done_button_ios_platform_interface.dart';
 
-/// Utility class for controlling the keyboard Done button toolbar
 class KeyboardToolbar {
-  /// Show the Done button toolbar above the keyboard
-  /// Call this when a TextField with number keyboard gains focus
-  static Future<void> show() async {
+  static Future<void> show({String? toolbarColor, String? buttonColor}) async {
     if (Platform.isIOS) {
-      await KeyboardDoneButtonIosPlatform.instance.showDoneButton();
+      await KeyboardDoneButtonIosPlatform.instance.showDoneButton(
+        toolbarColor: toolbarColor,
+        buttonColor: buttonColor,
+      );
     }
   }
 
-  /// Hide the Done button toolbar
-  /// Call this when a TextField without toolbar gains focus
   static Future<void> hide() async {
     if (Platform.isIOS) {
       await KeyboardDoneButtonIosPlatform.instance.hideDoneButton();
@@ -21,36 +19,20 @@ class KeyboardToolbar {
   }
 }
 
-/// A widget that automatically shows/hides the keyboard Done button toolbar
-/// based on focus state.
-///
-/// Wrap your TextField or TextFormField with this widget to automatically
-/// manage the toolbar visibility.
-///
-/// Example:
-/// ```dart
-/// KeyboardToolbarField(
-///   child: TextField(
-///     keyboardType: TextInputType.number,
-///   ),
-/// )
-/// ```
 class KeyboardToolbarField extends StatefulWidget {
-  /// The child widget (typically a TextField or TextFormField)
   final Widget child;
-
-  /// Whether to show the toolbar when this field is focused.
-  /// Defaults to true.
   final bool showToolbar;
-
-  /// Optional FocusNode. If not provided, one will be created internally.
   final FocusNode? focusNode;
+  final String? toolbarColor; // 👈 new
+  final String? buttonColor; // 👈 new
 
   const KeyboardToolbarField({
     super.key,
     required this.child,
     this.showToolbar = true,
     this.focusNode,
+    this.toolbarColor, // 👈 new
+    this.buttonColor, // 👈 new
   });
 
   @override
@@ -92,9 +74,7 @@ class _KeyboardToolbarFieldState extends State<KeyboardToolbarField> {
     super.didUpdateWidget(oldWidget);
     if (widget.focusNode != oldWidget.focusNode) {
       _focusNode.removeListener(_onFocusChange);
-      if (_ownsNode) {
-        _focusNode.dispose();
-      }
+      if (_ownsNode) _focusNode.dispose();
       _initFocusNode();
     }
   }
@@ -102,7 +82,10 @@ class _KeyboardToolbarFieldState extends State<KeyboardToolbarField> {
   void _onFocusChange() {
     if (_focusNode.hasFocus) {
       if (widget.showToolbar) {
-        KeyboardToolbar.show();
+        KeyboardToolbar.show(
+          toolbarColor: widget.toolbarColor,
+          buttonColor: widget.buttonColor,
+        );
       } else {
         KeyboardToolbar.hide();
       }
