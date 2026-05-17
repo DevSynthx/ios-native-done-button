@@ -18,8 +18,14 @@ class MethodChannelKeyboardDoneButtonIos extends KeyboardDoneButtonIosPlatform {
   }
 
   @override
-  Future<void> showDoneButton() async {
-    await methodChannel.invokeMethod<void>('showDoneButton');
+  Future<void> showDoneButton({
+    String? toolbarColor,
+    String? buttonColor,
+  }) async {
+    await methodChannel.invokeMethod<void>('showDoneButton', {
+      if (toolbarColor != null) 'toolbarColor': toolbarColor,
+      if (buttonColor != null) 'buttonColor': buttonColor,
+    });
   }
 
   @override

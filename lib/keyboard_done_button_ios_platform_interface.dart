@@ -28,7 +28,7 @@ abstract class KeyboardDoneButtonIosPlatform extends PlatformInterface {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
-  Future<void> showDoneButton() {
+  Future<void> showDoneButton({String? toolbarColor, String? buttonColor}) {
     throw UnimplementedError('showDoneButton() has not been implemented.');
   }
 
