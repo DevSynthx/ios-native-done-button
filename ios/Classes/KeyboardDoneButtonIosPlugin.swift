@@ -88,8 +88,9 @@ private func findFirstResponder() -> UIResponder? {
         .rootViewController?.view.findFirstResponder()
 }
 
-    private func hideDoneButton() {
-        if let firstResponder = UIApplication.shared.firstKeyWindow?.firstResponder {
+  private func hideDoneButton() {
+    DispatchQueue.main.async {
+        if let firstResponder = self.findFirstResponder() {
             if let textField = firstResponder as? UITextField {
                 textField.inputAccessoryView = nil
                 textField.reloadInputViews()
@@ -99,6 +100,7 @@ private func findFirstResponder() -> UIResponder? {
             }
         }
     }
+}
 
     @objc private func doneButtonTapped() {
         UIApplication.shared.sendAction(
@@ -122,16 +124,7 @@ private func findFirstResponder() -> UIResponder? {
     }
 }
 
-// MARK: - UIWindow / firstResponder extensions
-
-private extension UIApplication {
-    var firstKeyWindow: UIWindow? {
-        connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap { $0.windows }
-            .first { $0.isKeyWindow }
-    }
-}
+// MARK: - UIWindow / firstResponder extension
 
 extension UIView {
     func findFirstResponder() -> UIView? {
