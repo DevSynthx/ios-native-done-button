@@ -15,92 +15,80 @@ public class KeyboardDoneButtonIosPlugin: NSObject, FlutterPlugin {
         switch call.method {
         case "showDoneButton":
             let args = call.arguments as? [String: Any]
-            print("🎨 showDoneButton args: \(String(describing: args))")
             let toolbarColor = args?["toolbarColor"] as? String
             let buttonColor  = args?["buttonColor"] as? String
-            print("🎨 toolbarColor: \(String(describing: toolbarColor))")
             showDoneButton(toolbarHex: toolbarColor, buttonHex: buttonColor)
             result(nil)
-
         case "hideDoneButton":
             hideDoneButton()
             result(nil)
-
         default:
             result(FlutterMethodNotImplemented)
         }
     }
 
-   private func showDoneButton(toolbarHex: String?, buttonHex: String?) {
-    if UIDevice.current.userInterfaceIdiom == .pad { return }
+    private var toolbar: UIToolbar?
 
-    let toolbar = UIToolbar()
-    toolbar.sizeToFit()
+    private func showDoneButton(toolbarHex: String?, buttonHex: String?) {
+        if UIDevice.current.userInterfaceIdiom == .pad { return }
 
-    // ✅ Set on the instance directly, NOT UIToolbar.appearance()
-    if #available(iOS 15.0, *) {
-        let appearance = UIToolbarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = toolbarHex.flatMap { colorFromHex($0) }
-            ?? UIColor.systemGroupedBackground
-        toolbar.standardAppearance   = appearance
-        toolbar.scrollEdgeAppearance = appearance
-    } else {
-        // iOS 14 fallback
-        toolbar.barTintColor = toolbarHex.flatMap { colorFromHex($0) }
-            ?? UIColor.systemGroupedBackground
-        toolbar.isTranslucent = false
-    }
+        let bar = UIToolbar()
+        bar.sizeToFit()
+        bar.barTintColor = toolbarHex.flatMap { colorFromHex($0) } ?? UIColor.systemGroupedBackground
+        bar.isTranslucent = false
 
-    // Done button
-    let doneButton = UIBarButtonItem(
-        barButtonSystemItem: .done,
-        target: self,
-        action: #selector(doneButtonTapped)
-    )
-    doneButton.tintColor = buttonHex.flatMap { colorFromHex($0) } ?? UIColor.systemBlue
+        let doneButton = UIBarButtonItem(
+            barButtonSystemItem: .done,
+            target: self,
+            action: #selector(doneButtonTapped)
+        )
+        doneButton.tintColor = buttonHex.flatMap { colorFromHex($0) } ?? UIColor.systemBlue
 
-    let flexSpace = UIBarButtonItem(
-        barButtonSystemItem: .flexibleSpace,
-        target: nil, action: nil
-    )
-    toolbar.setItems([flexSpace, doneButton], animated: false)
+        let flexSpace = UIBarButtonItem(
+            barButtonSystemItem: .flexibleSpace,
+            target: nil, action: nil
+        )
+        bar.setItems([flexSpace, doneButton], animated: false)
+        self.toolbar = bar
 
-    // Attach to first responder
-    DispatchQueue.main.async {
-        if let firstResponder = self.findFirstResponder() {
-            if let tf = firstResponder as? UITextField {
-                tf.inputAccessoryView = toolbar
-                tf.reloadInputViews()
-            } else if let tv = firstResponder as? UITextView {
-                tv.inputAccessoryView = toolbar
-                tv.reloadInputViews()
-            }
+        // This is how the original plugin works — post to FlutterTextInputPlugin
+        NotificationCenter.default.post(
+            name: UITextField.textDidBeginEditingNotification,
+            object: nil
+        )
+
+        DispatchQueue.main.async {
+            self.attachToCurrentResponder()
         }
     }
-}
 
-private func findFirstResponder() -> UIResponder? {
-    return UIApplication.shared.connectedScenes
-        .compactMap { $0 as? UIWindowScene }
-        .flatMap { $0.windows }
-        .first { $0.isKeyWindow }?
-        .rootViewController?.view.findFirstResponder()
-}
+    private func attachToCurrentResponder() {
+        guard let window = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .flatMap({ $0.windows })
+            .first(where: { $0.isKeyWindow }) else { return }
 
-  private func hideDoneButton() {
-    DispatchQueue.main.async {
-        if let firstResponder = self.findFirstResponder() {
-            if let textField = firstResponder as? UITextField {
-                textField.inputAccessoryView = nil
-                textField.reloadInputViews()
-            } else if let textView = firstResponder as? UITextView {
-                textView.inputAccessoryView = nil
-                textView.reloadInputViews()
+        attachToolbar(self.toolbar, in: window)
+    }
+
+    private func attachToolbar(_ toolbar: UIToolbar?, in view: UIView) {
+        for subview in view.subviews {
+            let name = String(describing: type(of: subview))
+            if name.contains("FlutterTextInput") {
+                subview.perform(Selector(("setInputAccessoryView:")), with: toolbar)
+                subview.reloadInputViews()
+                return
             }
+            attachToolbar(toolbar, in: subview)
         }
     }
-}
+
+    private func hideDoneButton() {
+        self.toolbar = nil
+        DispatchQueue.main.async {
+            self.attachToCurrentResponder()
+        }
+    }
 
     @objc private func doneButtonTapped() {
         UIApplication.shared.sendAction(
@@ -108,8 +96,6 @@ private func findFirstResponder() -> UIResponder? {
             to: nil, from: nil, for: nil
         )
     }
-
-    // MARK: - Helpers
 
     private func colorFromHex(_ hex: String) -> UIColor? {
         var h = hex.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -121,14 +107,5 @@ private func findFirstResponder() -> UIResponder? {
             blue:  CGFloat( rgb        & 0xFF) / 255,
             alpha: 1.0
         )
-    }
-}
-
-// MARK: - UIWindow / firstResponder extension
-
-extension UIView {
-    func findFirstResponder() -> UIView? {
-        if isFirstResponder { return self }
-        return subviews.lazy.compactMap { $0.findFirstResponder() }.first
     }
 }
