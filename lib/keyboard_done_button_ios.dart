@@ -23,16 +23,16 @@ class KeyboardToolbarField extends StatefulWidget {
   final Widget child;
   final bool showToolbar;
   final FocusNode? focusNode;
-  final String? toolbarColor; // 👈 new
-  final String? buttonColor; // 👈 new
+  final String? toolbarColor;
+  final String? buttonColor;
 
   const KeyboardToolbarField({
     super.key,
     required this.child,
     this.showToolbar = true,
     this.focusNode,
-    this.toolbarColor, // 👈 new
-    this.buttonColor, // 👈 new
+    this.toolbarColor,
+    this.buttonColor,
   });
 
   @override
