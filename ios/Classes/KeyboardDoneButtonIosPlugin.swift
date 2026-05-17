@@ -1,13 +1,13 @@
 import Flutter
 import UIKit
 
-public class SwiftKeyboardDoneButtonIosPlugin: NSObject, FlutterPlugin {
+public class KeyboardDoneButtonIosPlugin: NSObject, FlutterPlugin {
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(
             name: "keyboard_done_button_ios",
             binaryMessenger: registrar.messenger()
         )
-        let instance = SwiftKeyboardDoneButtonIosPlugin()
+        let instance = KeyboardDoneButtonIosPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
 
